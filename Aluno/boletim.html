@@ -21,43 +21,42 @@
     
     <main class="main-content" style="display: flex; flex-direction: row; gap: 20px; max-width: 100%;">
       <!-- Informações do aluno -->
-      <div class="info-aluno-container">
-        <h2>Nome: <span id="aluno-nome"></span></h2>
-        <h2>Turma: <span id="aluno-turma"></span></h2>
-        <h2>Matrícula: <span id="aluno-matricula"></span></h2>
-      </div>
       
-      <!-- Seletor de trimestre -->
-      <div class="mobile">
-        <div class="filtro-trimestre">
-          <label for="trimestre-select">Selecione o Trimestre:</label>
-          <select id="trimestre-select">
-            <option value="1" selected>1º Trimestre</option>
-            <option value="2">2º Trimestre</option>
-            <option value="3">3º Trimestre</option>
-          </select>
-          <button onclick="buscarBoletim()">Buscar Boletim</button>
+        <div class="info-aluno-container">
+          <h2>Nome: <span id="aluno-nome"></span></h2>
+          <h2>Turma: <span id="aluno-turma"></span></h2>
+          <h2>Matrícula: <span id="aluno-matricula"></span></h2>
         </div>
-      </div>
-      
-      <!-- Calculadora N3 -->
-      <div class="mobile" style="display: flex; flex-direction: column;">
-        <div style="width: 100%; display: flex; flex-direction: row; background-color: transparent; gap: 5px; justify-content: center; align-items: center; padding: 10px;">
-          <p style="font-size: 1.2rem; font-weight: bold;">Quanto eu preciso na N3?</p>
-          <label class="switch">
-            <input type="checkbox" id="toggle-switch">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        
-        <div id="media-container" class="hidden">
-          <p style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">Média desejada:</p>
-          <div style="display: flex; flex-direction: row; gap: 10px; justify-content: center; align-items: center;">
-            <input type="number" id="media_desejada" min="0" max="10" step="0.1" placeholder="Ex: 7.0">
-            <button id="calcular-btn">Calcular</button>
+        <!-- Seletor de trimestre -->
+        <div class="mobile">
+          <div class="filtro-trimestre">
+            <label for="trimestre-select">Selecione o Trimestre:</label>
+            <select id="trimestre-select">
+              <option value="1" selected>1º Trimestre</option>
+              <option value="2">2º Trimestre</option>
+              <option value="3">3º Trimestre</option>
+            </select>
           </div>
         </div>
-      </div>
+        
+        <!-- Calculadora N3 -->
+        <div class="mobile" style="display: flex; flex-direction: column;">
+          <div style="width: 100%; display: flex; flex-direction: row; background-color: transparent; gap: 5px; justify-content: center; align-items: center; padding: 10px;">
+            <p style="font-size: 1.2rem; font-weight: bold;">Quanto eu preciso na N3?</p>
+            <label class="switch">
+              <input type="checkbox" id="toggle-switch">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          
+          <div id="media-container" class="hidden">
+            <p style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">Média desejada:</p>
+            <div style="display: flex; flex-direction: row; gap: 10px; justify-content: center; align-items: center;">
+              <input type="number" id="media_desejada" min="0" max="10" step="0.1" placeholder="Ex: 7.0">
+              <button id="calcular-btn">Calcular</button>
+            </div>
+          </div>
+        </div>
     </main>
 
     <!-- Tabela do boletim -->
