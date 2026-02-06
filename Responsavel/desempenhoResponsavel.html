@@ -29,15 +29,17 @@
         </div>
 
         <!-- Seletor de aluno (só aparece para responsável) -->
-        <div id="seletor-aluno-wrapper" style="display: none; margin-bottom: 16px;">
+         
+        
+
+        <!-- Filtros -->
+        <div class="filtros-desempenho">
+        <div id="seletor-aluno-wrapper" class="filtro-item" >
             <label for="select-aluno" style="font-weight: bold;">Selecione o Aluno:</label>
             <select id="select-aluno">
                 <option value="">-- Selecione --</option>
             </select>
         </div>
-
-        <!-- Filtros -->
-        <div class="filtros-desempenho">
             <div class="filtro-item">
                 <label for="trimestre-select">Trimestre:</label>
                 <select id="trimestre-select">
@@ -129,7 +131,7 @@
                         // É responsável
                         isResponsavel = true;
                         sidebarTitulo.textContent = 'Responsável';
-                        seletorWrapper.style.display = 'block';
+                        seletorWrapper.style.display = 'flex';
 
                         const alunos = await response.json();
 
