@@ -20,7 +20,7 @@ const pool = new Pool({
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(session({
-  secret: 'gremio1903',
+  secret: 'poiuqwerty',
   resave: false,
   saveUninitialized: true,
   cookie: { secure: false } // mudar para true em produção (HTTPS)
