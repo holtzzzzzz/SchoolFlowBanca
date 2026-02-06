@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="stylesSecretaria.css" />
+  <title>Registrar Usuário</title>
+</head>
+<body class="center-layout">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <img src="../imgs/menu.png" alt="Menu">
+      </div>
+      <div class="nav-links">
+        <a href="indexSecretaria.html"><img src="../imgs/home.png" alt="Home">Início</a>
+        <a href="register.html"><img src="../imgs/registro.png" alt="Register">Registrar</a>
+        <a href="desempenhoSecretaria.html"><img src="../imgs/turma.png" alt="Class">Desempenho da Turma</a>
+        <a href="criarTurmas.html"><img src="../imgs/paperplane.png" alt="Message">Criar Turmas</a>
+        <a href="boletimSecretaria.html"><img src="../imgs/grades.png" alt="Grades">Notas</a>
+        <a href="#"><img src="../imgs/faltas.png" alt="faltas">Faltas</a>
+      </div>
+    </nav>
+  
+  <div class="login-container">
+    <img src="../imgs/logo.png" alt="Logo" />
+    <h2>Cadastro de Usuário</h2>
+    
+    <select id="tipoCadastro">
+      <option value="">Selecione o Tipo</option>
+      <option value="aluno">Aluno</option>
+      <option value="professor">Professor</option>
+      <option value="responsavel">Responsável</option>
+      <option value="secretaria">Secretaria</option>
+    </select>
+    
+    <!-- Formulário -->
+    <form id="registerForm" action="/register" method="POST">
+      <input type="hidden" name="funcao" id="funcao" />
+      
+      <input type="text" name="nome" placeholder="Nome Completo" required />
+      <input type="email" name="email" placeholder="Email" required />
+      <input type="password" name="password" placeholder="Senha" required />
+
+      <!-- Turma (para aluno) -->
+      <select name="id_turma" id="id_turma" style="display:none;">
+        <option value="">Selecione a Turma</option>
+      </select>
+
+      <!-- Disciplina (para professor) -->
+      <select name="id_disciplina" id="id_disciplina" style="display:none;">
+        <option value="">Selecione a Disciplina</option>
+      </select>
+
+      <!-- Turmas (para professor - múltiplo) -->
+      <select name="id_turmas[]" id="id_turmas" multiple style="display:none;">
+      </select>
+
+      <!-- Alunos (para responsável - múltiplo com busca) -->
+      <div class="alunos-wrapper" id="alunos-wrapper">
+        <span class="alunos-hint">Busque e selecione os alunos (Ctrl+click para selecionar mais de um)</span>
+        <input type="text" class="busca-aluno" id="busca-aluno" placeholder="Digita o nome do aluno..." autocomplete="off" />
+        <select name="id_alunos[]" id="id_alunos" multiple>
+        </select>
+      </div>
+
+      <!-- Código (para secretaria) -->
+      <input type="text" name="codigo" id="codigo" placeholder="Código (apenas para Secretaria)" style="display:none;" />
+
+      <button class="login-button" type="submit">Registrar</button>
+    </form>
+  </div>
+
+  <script>
+    const tipoCadastro = document.getElementById('tipoCadastro');
+    const funcaoInput = document.getElementById('funcao');
+    const turmaSelect = document.getElementById('id_turma');
+    const disciplinaSelect = document.getElementById('id_disciplina');
+    const turmasMulti = document.getElementById('id_turmas');
+    const codigoInput = document.getElementById('codigo');
+
+    // ── Responsável ──
+    const alunosWrapper = document.getElementById('alunos-wrapper');
+    const buscaAluno = document.getElementById('busca-aluno');
+    const alunosSelect = document.getElementById('id_alunos');
+
+    // Cache com todos os alunos da API
+    let todoAlunos = [];
+
+    // ─────────────────────────────────────────
+    // Carregar turmas
+    // ─────────────────────────────────────────
+    async function carregarTurmas() {
+      try {
+        const response = await fetch('/api/turmas');
+        const turmas = await response.json();
+
+        // Para aluno
+        turmaSelect.innerHTML = '<option value="">Selecione a Turma</option>';
+        turmas.forEach(t => {
+          const option = document.createElement('option');
+          option.value = t.id_turma;
+          option.textContent = `${t.ano}º ${t.serie}`;
+          turmaSelect.appendChild(option);
+        });
+
+        // Para professor (multi)
+        turmasMulti.innerHTML = '';
+        turmas.forEach(t => {
+          const option = document.createElement('option');
+          option.value = t.id_turma;
+          option.textContent = `${t.ano}º ${t.serie}`;
+          turmasMulti.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar turmas:', error);
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // Carregar disciplinas
+    // ─────────────────────────────────────────
+    async function carregarDisciplinas() {
+      try {
+        const response = await fetch('/api/disciplinas');
+        const disciplinas = await response.json();
+
+        disciplinaSelect.innerHTML = '<option value="">Selecione a Disciplina</option>';
+        disciplinas.forEach(d => {
+          const option = document.createElement('option');
+          option.value = d.id_disciplina;
+          option.textContent = d.nome;
+          disciplinaSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar disciplinas:', error);
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // Carregar alunos (uma vez, no início)
+    // ─────────────────────────────────────────
+    async function carregarAlunos() {
+      try {
+        const response = await fetch('/api/alunos');
+        todoAlunos = await response.json();
+        // Popula o select inicialmente com todos
+        renderAlunos(todoAlunos);
+      } catch (error) {
+        console.error('Erro ao carregar alunos:', error);
+      }
+    }
+
+    // Renderiza a lista filtrada no select
+    function renderAlunos(lista) {
+      // Guarda quem já está selecionado para manter a seleção
+      const selecionados = Array.from(alunosSelect.selectedOptions).map(o => o.value);
+
+      alunosSelect.innerHTML = '';
+      lista.forEach(a => {
+        const option = document.createElement('option');
+        option.value = a.id_aluno;                          
+        option.textContent = a.nome;                              
+        if (selecionados.includes(String(a.id_aluno))) {
+          option.selected = true;                               
+        }
+        alunosSelect.appendChild(option);
+      });
+    }
+
+    // Filtro em tempo real ao digitar
+    buscaAluno.addEventListener('input', function () {
+      const valor = this.value.trim().toLowerCase();
+
+      if (valor === '') {
+        renderAlunos(todoAlunos);                              
+      } else {
+        const filtrados = todoAlunos.filter(a =>
+          a.nome.toLowerCase().includes(valor)                   
+        );
+        renderAlunos(filtrados);
+      }
+    });
+
+    carregarTurmas();
+    carregarDisciplinas();
+    carregarAlunos();
+    
+    tipoCadastro.addEventListener('change', function () {
+      funcaoInput.value = this.value;
+
+      // Esconde tudo
+      turmaSelect.style.display = 'none';
+      disciplinaSelect.style.display = 'none';
+      turmasMulti.style.display = 'none';
+      codigoInput.style.display = 'none';
+      alunosWrapper.classList.remove('visible');
+
+      // Mostra o que faz sentido
+      if (this.value === 'aluno') {
+        turmaSelect.style.display = 'block';
+
+      } else if (this.value === 'professor') {
+        disciplinaSelect.style.display = 'block';
+        turmasMulti.style.display = 'block';
+
+      } else if (this.value === 'responsavel') {
+        alunosWrapper.classList.add('visible');       // aparece busca + lista
+
+      } else if (this.value === 'secretaria') {
+        codigoInput.style.display = 'block';
+      }
+    });
+
+    // ─────────────────────────────────────────
+    // Submit do formulário
+    // ─────────────────────────────────────────
+    const registerForm = document.getElementById('registerForm');
+    registerForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!tipoCadastro.value) {
+        alert('Selecione o tipo de cadastro!');
+        return;
+      }
+
+      const formData = new FormData(registerForm);
+      let data = Object.fromEntries(formData);
+
+      // Múltiplas turmas do professor
+      if (tipoCadastro.value === 'professor') {
+        data.id_turmas = Array.from(turmasMulti.selectedOptions).map(o => o.value);
+      }
+
+      // Múltiplos alunos do responsável
+      if (tipoCadastro.value === 'responsavel') {
+        data.id_alunos = Array.from(alunosSelect.selectedOptions).map(o => o.value);
+      }
+
+      try {
+        const response = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const responseData = await response.json();
+
+        if (response.ok) {
+          alert(responseData.message);
+          registerForm.reset();
+          tipoCadastro.value = '';
+          funcaoInput.value = '';
+          turmaSelect.style.display = 'none';
+          disciplinaSelect.style.display = 'none';
+          turmasMulti.style.display = 'none';
+          codigoInput.style.display = 'none';
+          alunosWrapper.classList.remove('visible');
+          buscaAluno.value = '';                      
+          renderAlunos(todoAlunos);                   
+        } else {
+          alert(responseData.message);
+        }
+      } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao conectar com o servidor');
+      }
+    });
+  </script>
+</body>
+</html>

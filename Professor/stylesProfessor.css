@@ -1,0 +1,663 @@
+/* ===== RESET & BASE ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #CBE0E9;
+  min-height: 100vh;
+}
+
+/* ===== SIDEBAR ===== */
+nav.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 100vh;
+  background: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0 0 0;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+  z-index: 100;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 24px 24px 24px;
+}
+
+.sidebar-header img {
+  height: 28px;
+  width: 28px;
+  margin-right: 10px;
+}
+
+.sidebar-header h2 {
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 4px;
+  padding: 0 12px;
+}
+
+.nav-links a {
+  color: #333;
+  text-decoration: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+.nav-links a img {
+  height: 20px;
+  width: 20px;
+  margin-right: 10px;
+}
+
+.nav-links a:hover {
+  background-color: #555;
+  color: #fff;
+  transform: translateX(1%) scale(1.05);
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  margin-left: 220px;
+  padding: 40px 32px;
+  max-width: 1200px;
+}
+
+.main-content h1 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 24px;
+}
+
+.main-content p {
+  font-size: 1.4rem;
+  color: #333;
+}
+
+/* ===== CARDS/CONTAINERS ===== */
+.main-content > div {
+  background-color: #F0F0F0;
+  padding: 6%;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 20px;
+  width: 40vw;
+}
+
+/* ===== TABELAS ===== */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+th {
+  background: linear-gradient(90deg, #7747ed, #a385ee);
+  color: #fff;
+  text-align: center;
+  padding: 12px 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+td {
+  text-align: center;
+  padding: 10px 8px;
+  font-size: 0.9rem;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:hover {
+  background: #f1f0ff;
+  transition: 0.2s;
+}
+
+/* ===== INPUTS ===== */
+input, select {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background: #fff;
+}
+
+input:focus, select:focus {
+  border-color: #7747ed;
+  outline: none;
+}
+
+.inputtabela {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 0.9rem;
+  text-align: center;
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  background: #fdfdfd;
+}
+
+.inputtabela:focus {
+  border-color: #7747ed;
+  box-shadow: 0 0 0 2px rgba(119,71,237,0.25);
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #333;
+  display: block;
+}
+
+/* ===== BOTÕES ===== */
+.login-button,
+.btn-submit {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(90deg, #7747ed 60%, #a385ee 100%);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  margin-top: 16px;
+}
+
+.login-button:hover,
+.btn-submit:hover {
+  background: linear-gradient(90deg, #5f32d4 60%, #8a6ee4 100%);
+}
+
+td button {
+  padding: 8px 16px;
+  background: linear-gradient(90deg, #7747ed, #a385ee);
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+td button:hover {
+  opacity: 0.9;
+}
+
+/* ===== CONTAINERS ESPECÍFICOS ===== */
+.login-container {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(42,93,124,0.10);
+  padding: 40px 32px;
+  margin: 0 auto 32px;
+  max-width: 500px;
+  width: 100%;
+}
+.login-container2{
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(42, 93, 124, 0.10), 0 1.5px 6px rgba(42, 93, 124, 0.08);
+  padding: 40px 32px 32px 32px;
+  margin: 48px auto;
+  max-width: 400px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeInUp 0.7s cubic-bezier(.23, 1.01, .32, 1) both;
+  color: #333;
+}
+.login-container2 img {
+  width: 70%;
+  margin-bottom: 16px;
+  transition: transform 0.3s;
+  border-radius: 7px;
+  background-color: lightgray;
+}
+.login-container2 select,
+.login-container2 input[type="text"],
+.login-container2 input[type="email"],
+.login-container2 input[type="password"] {
+  width: 100%;
+  max-width: 320px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 1.5px solid #7a7a7a;
+  border-radius: 8px;
+  background: #f7fbfc;
+  font-size: 1rem;
+  color: #333;
+  transition: border 0.3s, box-shadow 0.3s;
+  box-shadow: 0 0 0 0 rgba(42,93,124,0);
+  box-sizing: border-box;
+  display: block;
+}
+.login-container2 form {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+}
+.login-container h2 {
+  margin-bottom: 24px;
+  color: black;
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+#boletim-container {
+  margin-top: 20px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow-x: auto;
+}
+
+
+
+.save-all-button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+.save-all-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.chart-container {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.chart-container h2 {
+  font-size: 1.4rem;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Filtros para gráficos */
+.filters {
+  background-color: #f8f9fa !important;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding: 24px !important;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  border: 1px solid #d0d0d0;
+  max-width: 100% !important;
+  width: auto !important;
+  max-height: 450px;
+  height: auto !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  text-align: left !important;
+}
+
+/* Scrollbar personalizada para filtros */
+.filters::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filters::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.filters::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.filters::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Seletor de análise */
+.analysis-selector {
+  width: 100% !important;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 15px;
+  background-color: transparent !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-items: center;
+  text-align: left !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+}
+
+.analysis-selector strong {
+  font-size: 1.1rem;
+  color: #333;
+  margin-right: 10px;
+}
+
+.analysis-selector label {
+  margin-left: 5px;
+  margin-right: 15px;
+  cursor: pointer;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  max-width: 280px;
+  flex: 1 1 200px;
+  background-color: transparent !important;
+  height: auto !important;
+  width: auto !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+/* Containers de seleção de turma */
+#turma-single-container,
+#turma-multiple-container {
+  min-width: 200px;
+  max-width: 280px;
+}
+
+/* Select múltiplo */
+.form-row select[multiple] {
+  min-height: 120px;
+}
+
+/* Estilos específicos para divs transparentes dentro de login-container */
+.login-container > div[style*="background-color: transparent"] {
+  background-color: transparent !important;
+  flex: 1;
+  flex-direction: row;
+  height: 100%;
+}
+
+.login-container > div > div[style*="background-color: transparent"] {
+  background-color: transparent !important;
+  height: 0;
+}
+
+/* ===== ESTILOS ESPECÍFICOS DO BOLETIM ===== */
+/* Container principal do boletim */
+#boletim-container {
+  margin-top: 20px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow-x: auto;
+  width: 100%;
+}
+
+#boletim-container table {
+  min-width: 900px;
+  width: 100%;
+}
+
+/* Container dos filtros de turma e trimestre */
+.filtros-boletim {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  background-color: transparent;
+  flex: 1;
+  height: auto;
+  align-items: flex-end;
+}
+
+.filtros-boletim > div {
+  flex: 1;
+  background-color: transparent;
+  height: auto;
+}
+
+/* Células calculadas (N1, MP, MT) */
+td[id*="-display-"] {
+  font-weight: bold;
+  background-color: #f0f0f0;
+}
+
+/* Input de recuperação desabilitado */
+input[id*="rec-"]:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Estilo para inputs de faltas */
+input[id*="faltas-"] {
+  width: 70px;
+}
+
+/* ===== RESPONSIVIDADE MOBILE ===== */
+@media (max-width: 968px) {
+  nav.sidebar {
+    width: 100vw;
+    height: 70px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+  }
+
+  .sidebar-header {
+    padding: 0;
+  }
+
+  .sidebar-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .nav-links {
+    flex-direction: row;
+    gap: 0;
+    padding: 0;
+  }
+
+  .nav-links a {
+    padding: 10px;
+    font-size: 0;
+  }
+
+  .nav-links a img {
+    margin: 0;
+  }
+
+  .main-content {
+    margin-left: 0;
+    margin-top: 90px;
+    padding: 20px 16px;
+  }
+
+  .main-content > div {
+    width: 100%;
+  }
+
+  /* Tabelas responsivas */
+  table {
+    font-size: 14px;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody, tr {
+    display: block;
+  }
+
+  tr {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 5px;
+    border: none;
+    text-align: right;
+  }
+
+  td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    text-align: left;
+  }
+
+  .login-container {
+    max-width: 100%;
+    padding: 24px 20px;
+  }
+
+  .filters {
+    flex-direction: column;
+    padding: 16px;
+    max-height: 400px;
+  }
+
+  .form-row {
+    min-width: 100%;
+  }
+
+  .analysis-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .analysis-selector label {
+    margin: 5px 0;
+  }
+
+  #boletim-container table {
+    min-width: 0;
+    display: block;
+  }
+
+  #boletim-container thead {
+    display: none;
+  }
+
+  #boletim-container tbody,
+  #boletim-container tr {
+    display: block;
+  }
+
+  #boletim-container tr {
+    margin-bottom: 16px;
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  #boletim-container td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border: none;
+    text-align: right;
+  }
+
+  #boletim-container td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #555;
+    text-align: left;
+  }
+
+  #boletim-container td:first-child {
+    background: #f0f0f0;
+    margin: -12px -12px 8px;
+    padding: 12px;
+    border-radius: 10px 10px 0 0;
+    font-weight: bold;
+  }
+
+  .filtros-boletim {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filtros-boletim > div {
+    width: 100%;
+  }
+
+  .inputtabela {
+    width: auto;
+    min-width: 80px;
+  }
+
+  td button {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+/* ===== RESPONSIVIDADE TABLET ===== */
+@media (min-width: 969px) and (max-width: 1400px) {
+  #boletim-container table {
+    min-width: 600px;
+  }
+
+  th, td {
+    padding: 10px 6px;
+    font-size: 0.85rem;
+  }
+
+  .inputtabela {
+    width: 100%;
+    padding: 5px 6px;
+  }
+}

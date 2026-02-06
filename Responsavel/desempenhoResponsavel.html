@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Desempenho</title>
+    <link rel="stylesheet" href="../Aluno/stylesAluno.css" />
+    <script src="../js/chart.js"></script>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <img src="../imgs/menu.png" alt="Menu">
+            <h2 id="sidebar-titulo">Responsável</h2>
+        </div>
+        <div class="nav-links">
+            <a href="indexResponsavel.html"><img src="../imgs/home.png" alt="Home">Início</a>
+            <a href="boletimResponsavel.html"><img src="../imgs/book.png" alt="Book">Boletim</a>
+            <a href="desempenhoResponsavel.html"><img src="../imgs/turma.png" alt="Class">Desempenho do Aluno</a>
+        </div>
+    </nav>
+
+    <div class="main-content" style="max-width: 100%;">
+        
+        <div class="page-header">
+            <h1>Análise de Desempenho</h1>
+            <p id="student-info">Carregando informações...</p>
+        </div>
+
+        <!-- Seletor de aluno (só aparece para responsável) -->
+        <div id="seletor-aluno-wrapper" style="display: none; margin-bottom: 16px;">
+            <label for="select-aluno" style="font-weight: bold;">Selecione o Aluno:</label>
+            <select id="select-aluno">
+                <option value="">-- Selecione --</option>
+            </select>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-desempenho">
+            <div class="filtro-item">
+                <label for="trimestre-select">Trimestre:</label>
+                <select id="trimestre-select">
+                    <option value="1">1º Trimestre</option>
+                    <option value="2">2º Trimestre</option>
+                    <option value="3">3º Trimestre</option>
+                </select>
+            </div>
+
+            <div class="filtro-item">
+                <label for="avaliacao-select">Tipo de Avaliação:</label>
+                <select id="avaliacao-select">
+                    <option value="i1">I1</option>
+                    <option value="i2">I2</option>
+                    <option value="epa">EPA</option>
+                    <option value="n2">N2</option>
+                    <option value="n3">N3</option>
+                    <option value="rec">Recuperação</option>
+                    <option value="media">Média Geral</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Estatísticas resumidas -->
+        <div class="stats-summary" id="stats-summary"></div>
+
+        <!-- Gráficos -->
+        <div class="charts-wrapper">
+            <div class="chart-container">
+                <h2>Comparação por Disciplina: Você vs Turma</h2>
+                <canvas id="chart-disciplinas"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2>Desempenho por Área de Conhecimento</h2>
+                <canvas id="chart-areas"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // ─────────────────────────────────────────
+            // Estado
+            // ─────────────────────────────────────────
+            let isResponsavel = false;
+            let chartDisciplinas = null;
+            let chartAreas = null;
+
+            // Elementos
+            const trimestreSelect  = document.getElementById('trimestre-select');
+            const avaliacaoSelect  = document.getElementById('avaliacao-select');
+            const studentInfo      = document.getElementById('student-info');
+            const statsSummary     = document.getElementById('stats-summary');
+            const seletorWrapper   = document.getElementById('seletor-aluno-wrapper');
+            const selectAluno      = document.getElementById('select-aluno');
+            const sidebarTitulo    = document.getElementById('sidebar-titulo');
+
+            // Contextos dos gráficos
+            const ctxDisciplinas = document.getElementById('chart-disciplinas').getContext('2d');
+            const ctxAreas       = document.getElementById('chart-areas').getContext('2d');
+
+            // ─────────────────────────────────────────
+            // Monta a query string base com id_aluno se responsável
+            // ─────────────────────────────────────────
+            function parametrosBase() {
+                const trimestre = trimestreSelect.value;
+                const avaliacao = avaliacaoSelect.value;
+                let params = `trimestre=${trimestre}&avaliacao=${avaliacao}`;
+
+                if (isResponsavel) {
+                    const alunoId = selectAluno.value;
+                    if (!alunoId) return null; // sem aluno selecionado
+                    params += `&id_aluno=${alunoId}`;
+                }
+
+                return params;
+            }
+
+            // ─────────────────────────────────────────
+            // Inicialização: detecta se é responsável ou aluno
+            // ─────────────────────────────────────────
+            async function inicializar() {
+                try {
+                    const response = await fetch('/api/responsavel/alunos');
+
+                    if (response.ok) {
+                        // É responsável
+                        isResponsavel = true;
+                        sidebarTitulo.textContent = 'Responsável';
+                        seletorWrapper.style.display = 'block';
+
+                        const alunos = await response.json();
+
+                        alunos.forEach(a => {
+                            const option = document.createElement('option');
+                            option.value = a.id_aluno;
+                            option.textContent = `${a.nome} - ${a.ano}º ${a.serie}`;
+                            selectAluno.appendChild(option);
+                        });
+
+                        // Seleciona o primeiro automaticamente
+                        if (alunos.length > 0) {
+                            selectAluno.value = alunos[0].id_aluno;
+                        }
+
+                        selectAluno.addEventListener('change', function () {
+                            if (this.value) atualizarDashboard();
+                        });
+                    }
+                } catch (err) {
+                    // Não é responsável — segue como aluno
+                }
+
+                // Carrega info e dashboard do aluno (primeiro da lista se responsável, ou próprio se aluno)
+                await carregarInfoAluno();
+                await atualizarDashboard();
+            }
+
+            // ─────────────────────────────────────────
+            // Carrega info do aluno
+            // ─────────────────────────────────────────
+            async function carregarInfoAluno() {
+                try {
+                    let url = '/api/aluno/info';
+                    if (isResponsavel && selectAluno.value) {
+                        url += `?id_aluno=${selectAluno.value}`;
+                    }
+
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('Erro ao carregar informações');
+
+                    const data = await res.json();
+                    studentInfo.textContent = `${data.nome} - ${data.turma}`;
+                } catch (error) {
+                    console.error('❌ Erro ao carregar info do aluno:', error);
+                    studentInfo.textContent = 'Erro ao carregar informações';
+                }
+            }
+
+            // ─────────────────────────────────────────
+            // Atualiza todo o dashboard
+            // ─────────────────────────────────────────
+            async function atualizarDashboard() {
+                const params = parametrosBase();
+                if (params === null) return; // responsável sem aluno selecionado
+
+                try {
+                    // Atualiza info do aluno ao trocar
+                    await carregarInfoAluno();
+
+                    // Busca disciplinas e áreas em paralelo
+                    const [resDisciplinas, resAreas] = await Promise.all([
+                        fetch(`/api/aluno/desempenho-disciplinas?${params}`),
+                        fetch(`/api/aluno/desempenho-areas?${params}`)
+                    ]);
+
+                    const dataDisciplinas = await resDisciplinas.json();
+                    const dataAreas       = await resAreas.json();
+
+                    atualizarEstatisticas(dataDisciplinas, dataAreas);
+                    atualizarGraficoDisciplinas(dataDisciplinas);
+                    atualizarGraficoAreas(dataAreas);
+
+                } catch (error) {
+                    console.error('❌ Erro ao atualizar dashboard:', error);
+                }
+            }
+
+            // ─────────────────────────────────────────
+            // Estatísticas resumidas
+            // ─────────────────────────────────────────
+            function atualizarEstatisticas(dataDisciplinas, dataAreas) {
+                const mediaAluno = calcularMedia(dataDisciplinas.notas_aluno);
+                const mediaTurma = calcularMedia(dataDisciplinas.notas_turma);
+                const diferenca  = mediaAluno - mediaTurma;
+                const inst       = avaliacaoSelect.value.toUpperCase();
+
+                let comparisonClass = 'equal';
+                let comparisonText  = 'Na média';
+                if (diferenca > 0.5) {
+                    comparisonClass = 'above';
+                    comparisonText  = `+${diferenca.toFixed(1)} acima`;
+                } else if (diferenca < -0.5) {
+                    comparisonClass = 'below';
+                    comparisonText  = `${diferenca.toFixed(1)} abaixo`;
+                }
+
+                statsSummary.innerHTML = `
+                    <div class="stat-card">
+                        <h3>Sua Média</h3>
+                        <div class="value">${mediaAluno.toFixed(1)}</div>
+                        <div class="label">${inst}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Média da Turma</h3>
+                        <div class="value">${mediaTurma.toFixed(1)}</div>
+                        <div class="label">${inst}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Comparação</h3>
+                        <div class="value">${diferenca >= 0 ? '+' : ''}${diferenca.toFixed(1)}</div>
+                        <div class="label">
+                            <span class="comparison-badge ${comparisonClass}">${comparisonText}</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Melhor Área</h3>
+                        <div class="value">${encontrarMelhorArea(dataAreas)}</div>
+                        <div class="label">Destaque</div>
+                    </div>
+                `;
+            }
+
+            // ─────────────────────────────────────────
+            // Gráfico: disciplinas (bar)
+            // ─────────────────────────────────────────
+            function atualizarGraficoDisciplinas(data) {
+                if (chartDisciplinas) chartDisciplinas.destroy();
+
+                chartDisciplinas = new Chart(ctxDisciplinas, {
+                    type: 'bar',
+                    data: {
+                        labels: data.disciplinas,
+                        datasets: [
+                            {
+                                label: 'Nota',
+                                data: data.notas_aluno,
+                                backgroundColor: 'rgba(119, 71, 237, 0.7)',
+                                borderColor: 'rgba(119, 71, 237, 1)',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Média da Turma',
+                                data: data.notas_turma,
+                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 10,
+                                title: { display: true, text: 'Nota', font: { size: 14, weight: 'bold' } }
+                            },
+                            x: {
+                                title: { display: true, text: 'Disciplina', font: { size: 14, weight: 'bold' } }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        if (context.datasetIndex === 0) {
+                                            const notaAluno = context.parsed.y;
+                                            const notaTurma = context.chart.data.datasets[1].data[context.dataIndex];
+                                            const diff = notaAluno - notaTurma;
+                                            return `Diferença: ${diff >= 0 ? '+' : ''}${diff.toFixed(1)}`;
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ─────────────────────────────────────────
+            // Gráfico: áreas (radar)
+            // ─────────────────────────────────────────
+            function atualizarGraficoAreas(data) {
+                if (chartAreas) chartAreas.destroy();
+
+                chartAreas = new Chart(ctxAreas, {
+                    type: 'radar',
+                    data: {
+                        labels: data.areas,
+                        datasets: [
+                            {
+                                label: 'Desempenho',
+                                data: data.medias_aluno,
+                                backgroundColor: 'rgba(119, 71, 237, 0.2)',
+                                borderColor: 'rgba(119, 71, 237, 1)',
+                                pointBackgroundColor: 'rgba(119, 71, 237, 1)',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: 'rgba(119, 71, 237, 1)',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Média da Turma',
+                                data: data.medias_turma,
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            r: { beginAtZero: true, max: 10, ticks: { stepSize: 2 } }
+                        },
+                        plugins: {
+                            legend: { display: true, position: 'top' }
+                        }
+                    }
+                });
+            }
+
+            // ─────────────────────────────────────────
+            // Auxiliares
+            // ─────────────────────────────────────────
+            function calcularMedia(notas) {
+                const validas = notas.filter(n => n !== null && n !== undefined);
+                if (validas.length === 0) return 0;
+                return validas.reduce((a, b) => a + b, 0) / validas.length;
+            }
+
+            function encontrarMelhorArea(dataAreas) {
+                let melhorIndice = 0;
+                let melhorMedia  = 0;
+                dataAreas.medias_aluno.forEach((media, index) => {
+                    if (media > melhorMedia) {
+                        melhorMedia  = media;
+                        melhorIndice = index;
+                    }
+                });
+                return dataAreas.areas[melhorIndice] || 'N/A';
+            }
+
+            // ─────────────────────────────────────────
+            // Event listeners dos filtros
+            // ─────────────────────────────────────────
+            trimestreSelect.addEventListener('change', atualizarDashboard);
+            avaliacaoSelect.addEventListener('change', atualizarDashboard);
+
+            // ─────────────────────────────────────────
+            // Inicia tudo
+            // ─────────────────────────────────────────
+            await inicializar();
+        });
+    </script>
+</body>
+</html>

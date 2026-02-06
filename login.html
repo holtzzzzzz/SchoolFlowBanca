@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="Professor/stylesProfessor.css"/>
+    <title>Log in</title>
+</head>
+<body style="justify-content: center; display: flex; align-items: center;">
+    <div class="login-container2">
+        <img src="imgs/logo.png" alt="Logo" />
+        <form id="loginForm" action="/login" method="POST">
+            <input type="email" id="email" name="email" placeholder="Email" required />
+            <input type="password" id="senha" name="password" placeholder="Senha" required />
+
+            <button class="login-button" type="submit">Entrar</button>
+            <div style="margin-top: 5%; align-self: flex-end;">
+                <a style=" color: blue; " href=''>Esqueci minha senha</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(loginForm);
+            const data = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(data).toString(),
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    const funcao = responseData.funcao;
+
+                    // guarda id no sessionStorage se for aluno
+                    if (funcao === 'aluno') {
+                        sessionStorage.setItem('alunoId', responseData.id);
+                    }
+
+                    switch (funcao) {
+                        case 'responsavel':
+                            window.location.href = 'Responsavel/indexResponsavel.html';
+                            break;
+                        case 'professor':
+                            window.location.href = 'Professor/indexProfessor.html';
+                            break;
+                        case 'secretaria':
+                            window.location.href = 'Secretaria/indexSecretaria.html';
+                            break;
+                        case 'aluno':
+                            window.location.href = 'Aluno/index.html';
+                            break;
+                        default:
+                            window.location.href = '/login.html';
+                            break;
+                    }
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.message);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao conectar com o servidor');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="stylesProfessor.css">
+    <title>SchoolFlow</title>
+  </head>
+  <body>
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <img src="../imgs/menu.png" alt="Menu">
+        <h2>Professor</h2>
+      </div>
+      <div class="nav-links">
+        <a href="indexProfessor.html"><img src="../imgs/home.png" alt="Home">Início</a>
+        <a href="desempenho.html"><img src="../imgs/turma.png" alt="Class">Desempenho da Turma</a>
+        <a href="#"><img src="../imgs/faltas.png" alt="Faltas">Faltas</a>
+        <a href="boletimProfessor.html"><img src="../imgs/grades.png" alt="Grades">Notas</a>
+      </div>
+    </nav>
+    <main class="main-content">
+      <div>
+        <h1>Seja bem-vindo ao SchoolFlow!</h1>
+        <p>Olhe as novidades!!</p>
+      </div>
+      <div id="faltosos">
+        <h2>Alunos mais faltosos</h2>
+        <table id="tabela-faltosos">
+          <thead>
+            <tr>
+              <th>Aluno</th>
+              <th>Total de Faltas</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-faltosos">
+          </tbody>
+        </table>
+      </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', async () => {
+        async function maisFaltas() {
+          const tbody = document.getElementById('tbody-faltosos')
+
+          try {
+            console.log('buscando mais faltosos')
+
+            const res = await fetch('/professores/faltosos')
+            if (!res.ok) {
+              throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+
+            const data = await res.json()
+            
+            tbody.innerHTML = ''
+
+            data.forEach(falta => {
+              const tr = document.createElement('tr')
+              tr.innerHTML = `
+                <td>${falta.aluno}</td>
+                <td>${falta.total_faltas}</td>
+              `
+              console.log(falta.aluno, falta.total_faltas)
+              tbody.appendChild(tr)
+            });
+            
+          } catch(error) {
+            alert(`Erro: ${error.message}`);
+          }
+        }
+        
+        maisFaltas();
+      });
+    </script>
+    </main>
+  </body>
+</html>

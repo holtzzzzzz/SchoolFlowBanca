@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="stylesSecretaria.css">
+    <title>Criar Turma - SchoolFlow</title>
+  </head>
+  <body>
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <img src="../imgs/menu.png" alt="Menu">
+      </div>
+      <div class="nav-links">
+        <a href="indexSecretaria.html"><img src="../imgs/home.png" alt="Home">Início</a>
+        <a href="register.html"><img src="../imgs/registro.png" alt="Register">Registrar</a>
+        <a href="desempenhoSecretaria.html"><img src="../imgs/turma.png" alt="Class">Desempenho da Turma</a>
+        <a href="criarTurmas.html"><img src="../imgs/paperplane.png" alt="Message">Criar Turmas</a>
+        <a href="boletimSecretaria.html"><img src="../imgs/grades.png" alt="Grades">Notas</a>
+        <a href="#"><img src="../imgs/faltas.png" alt="faltas">Faltas</a>
+      </div>
+    </nav>
+
+    <main class="main-content" style="max-width: 100%;">
+      <div style='padding-top: 3%; padding-bottom: 1%; height: 15%;' class="form-turma">
+        <h1>Criar Nova Turma</h1>
+      </div>
+      <form id="form-turma" class="form-turma">
+        <div class="form-row">
+          <label for="ano">Ano:</label>
+          <input type="number" id="ano" name="ano" placeholder="Ex: 2025" required>
+        </div>
+
+        <div class="form-row">
+          <label for="serie">Série:</label>
+          <input type="text" id="serie" name="serie" placeholder="Ex: 1ºA" required>
+        </div>
+
+        <div class="form-row">
+          <label for="disciplinas">Disciplinas (Ctrl+Click para múltiplas):</label>
+          <select id="disciplinas" name="disciplinas" multiple required></select>
+        </div>
+
+        <button type="submit" class="btn-submit">Criar Turma</button>
+      </form>
+
+      <div style='background-color: transparent !important' class="mensagem" id="mensagem"></div>
+    </main>
+
+    <script>
+      // Carrega disciplinas do backend
+      async function carregarDisciplinas() {
+        try {
+          const resp = await fetch("/api/disciplinas"); 
+          const disciplinas = await resp.json();
+          console.log("disciplinas recebidas:", disciplinas);
+          const select = document.getElementById("disciplinas");
+          
+          disciplinas.forEach(d => { 
+            const option = document.createElement("option");
+            option.value = d.id_disciplina;
+            option.textContent = d.nome;
+            select.appendChild(option);
+          });
+        } catch (err) {
+          console.error("Erro ao carregar disciplinas", err);
+        }
+      }
+
+      carregarDisciplinas();
+
+      // Envia turma para o backend
+      document.getElementById("form-turma").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const ano = document.getElementById("ano").value;
+        const serie = document.getElementById("serie").value;
+        const disciplinas = Array.from(
+          document.getElementById("disciplinas").selectedOptions
+        ).map(opt => parseInt(opt.value));
+
+        if (disciplinas.length === 0) {
+          alert('Selecione pelo menos uma disciplina!');
+          return;
+        }
+
+        try {
+          const resp = await fetch("/api/criarturmas", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ano, serie, disciplinas })
+          });
+
+          const data = await resp.json();
+          
+          if (resp.ok) {
+            alert(data.message || 'Turma criada com sucesso!');
+            document.getElementById("form-turma").reset();
+          } else {
+            alert(data.message || 'Erro ao criar turma');
+          }
+        } catch (err) {
+          alert('Erro ao criar turma');
+          console.error(err);
+        }
+      });
+    </script>
+  </body>
+</html>

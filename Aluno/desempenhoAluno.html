@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Desempenho</title>
+    <link rel="stylesheet" href="stylesAluno.css" />
+    <script src="../js/chart.js"></script>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <img src="../imgs/menu.png" alt="Menu">
+            <h2>Aluno</h2>
+        </div>
+        <div class="nav-links">
+            <a href="index.html"><img src="../imgs/home.png" alt="Home">Início</a>
+            <a href="boletim.html"><img src="../imgs/book.png" alt="Book">Boletim</a>
+            <a href="desempenhoAluno.html"><img src="../imgs/turma.png" alt="Class">Desempenho da Turma</a>
+        </div>
+    </nav>
+
+    <div class="main-content" style="max-width: 100%;">
+        
+        <div class="page-header">
+            <h1>Análise de Desempenho</h1>
+            <p id="student-info">Carregando informações...</p>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-desempenho">
+            <div class="filtro-item">
+                <label for="trimestre-select">Trimestre:</label>
+                <select id="trimestre-select">
+                    <option value="1">1º Trimestre</option>
+                    <option value="2">2º Trimestre</option>
+                    <option value="3">3º Trimestre</option>
+                </select>
+            </div>
+
+            <div class="filtro-item">
+                <label for="avaliacao-select">Tipo de Avaliação:</label>
+                <select id="avaliacao-select">
+                    
+                    <option value="i1">I1</option>
+                    <option value="i2">I2</option>
+                    <option value="epa">EPA</option>
+                    <option value="n2">N2</option>
+                    <option value="n3">N3</option>
+                    <option value="rec">Recuperação</option>
+                    <option value="media">Média Geral</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Estatísticas resumidas -->
+        <div class="stats-summary" id="stats-summary">
+            <!-- Será preenchido dinamicamente -->
+        </div>
+
+        <!-- Gráficos -->
+        <div class="charts-wrapper">
+            <!-- Gráfico 1: Comparação por Disciplina -->
+            <div class="chart-container">
+                <h2>Comparação por Disciplina: Você vs Turma</h2>
+                <canvas id="chart-disciplinas"></canvas>
+            </div>
+
+            <!-- Gráfico 2: Desempenho por Área de Conhecimento -->
+            <div class="chart-container">
+                <h2>Desempenho por Área de Conhecimento</h2>
+                <canvas id="chart-areas"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Página carregada');
+
+            // Elementos
+            const trimestreSelect = document.getElementById('trimestre-select');
+            const avaliacaoSelect = document.getElementById('avaliacao-select');
+            const studentInfo = document.getElementById('student-info');
+            const statsSummary = document.getElementById('stats-summary');
+
+            // Contextos dos gráficos
+            const ctxDisciplinas = document.getElementById('chart-disciplinas').getContext('2d');
+            const ctxAreas = document.getElementById('chart-areas').getContext('2d');
+
+            let chartDisciplinas = null;
+            let chartAreas = null;
+            let alunoInfo = null;
+
+            // Carrega informações básicas do aluno
+            async function carregarInfoAluno() {
+                try {
+                    const res = await fetch('/api/aluno/info');
+                    if (!res.ok) throw new Error('Erro ao carregar informações');
+                    alunoInfo = await res.json();
+                    studentInfo.textContent = `${alunoInfo.nome} - ${alunoInfo.turma}`;
+                    console.log('✅ Info do aluno carregada:', alunoInfo);
+                } catch (error) {
+                    console.error('❌ Erro ao carregar info do aluno:', error);
+                    studentInfo.textContent = 'Erro ao carregar informações';
+                }
+            }
+
+            // Atualiza todos os gráficos
+            async function atualizarDashboard() {
+                const trimestre = trimestreSelect.value;
+                const avaliacao = avaliacaoSelect.value;
+
+                console.log('📊 Atualizando dashboard:', { trimestre, avaliacao });
+
+                try {
+                    // Busca dados de disciplinas
+                    const resDisciplinas = await fetch(
+                        `/api/aluno/desempenho-disciplinas?trimestre=${trimestre}&avaliacao=${avaliacao}`
+                    );
+                    const dataDisciplinas = await resDisciplinas.json();
+
+                    // Busca dados de áreas
+                    const resAreas = await fetch(
+                        `/api/aluno/desempenho-areas?trimestre=${trimestre}&avaliacao=${avaliacao}`
+                    );
+                    const dataAreas = await resAreas.json();
+
+                    console.log('✅ Dados recebidos:', { dataDisciplinas, dataAreas });
+
+                    // Atualiza estatísticas
+                    atualizarEstatisticas(dataDisciplinas, dataAreas);
+
+                    // Atualiza gráficos
+                    atualizarGraficoDisciplinas(dataDisciplinas);
+                    atualizarGraficoAreas(dataAreas);
+
+                } catch (error) {
+                    console.error('❌ Erro ao atualizar dashboard:', error);
+                }
+            }
+
+            // Atualiza as estatísticas resumidas
+            function atualizarEstatisticas(dataDisciplinas, dataAreas) {
+                const mediaAluno = calcularMedia(dataDisciplinas.notas_aluno);
+                const mediaTurma = calcularMedia(dataDisciplinas.notas_turma);
+                const diferenca = mediaAluno - mediaTurma;
+                const avaliacao = avaliacaoSelect.value;
+                const inst = avaliacao.toUpperCase();
+
+                let comparisonClass = 'equal';
+                let comparisonText = 'Na média';
+                if (diferenca > 0.5) {
+                    comparisonClass = 'above';
+                    comparisonText = `+${diferenca.toFixed(1)} acima`;
+                } else if (diferenca < -0.5) {
+                    comparisonClass = 'below';
+                    comparisonText = `${diferenca.toFixed(1)} abaixo`;
+                }
+
+                statsSummary.innerHTML = `
+                    <div class="stat-card">
+                        <h3>Sua Média</h3>
+                        <div class="value">${mediaAluno.toFixed(1)}</div>
+                        <div class="label">${inst}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Média da Turma</h3>
+                        <div class="value">${mediaTurma.toFixed(1)}</div>
+                        <div class="label">${inst}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Comparação</h3>
+                        <div class="value">${diferenca >= 0 ? '+' : ''}${diferenca.toFixed(1)}</div>
+                        <div class="label">
+                            <span class="comparison-badge ${comparisonClass}">${comparisonText}</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Melhor Área</h3>
+                        <div class="value">${encontrarMelhorArea(dataAreas)}</div>
+                        <div class="label">Destaque</div>
+                    </div>
+                `;
+            }
+
+            // Atualiza gráfico de disciplinas
+            function atualizarGraficoDisciplinas(data) {
+                if (chartDisciplinas) chartDisciplinas.destroy();
+
+                chartDisciplinas = new Chart(ctxDisciplinas, {
+                    type: 'bar',
+                    data: {
+                        labels: data.disciplinas,
+                        datasets: [
+                            {
+                                label: 'Minha Nota',
+                                data: data.notas_aluno,
+                                backgroundColor: 'rgba(119, 71, 237, 0.7)',
+                                borderColor: 'rgba(119, 71, 237, 1)',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Média da Turma',
+                                data: data.notas_turma,
+                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 10,
+                                title: {
+                                    display: true,
+                                    text: 'Nota',
+                                    font: { size: 14, weight: 'bold' }
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Disciplina',
+                                    font: { size: 14, weight: 'bold' }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        if (context.datasetIndex === 0) {
+                                            const notaAluno = context.parsed.y;
+                                            const notaTurma = context.chart.data.datasets[1].data[context.dataIndex];
+                                            const diff = notaAluno - notaTurma;
+                                            return `Diferença: ${diff >= 0 ? '+' : ''}${diff.toFixed(1)}`;
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Atualiza gráfico de áreas de conhecimento
+            function atualizarGraficoAreas(data) {
+                if (chartAreas) chartAreas.destroy();
+
+                chartAreas = new Chart(ctxAreas, {
+                    type: 'radar',
+                    data: {
+                        labels: data.areas,
+                        datasets: [
+                            {
+                                label: 'Meu Desempenho',
+                                data: data.medias_aluno,
+                                backgroundColor: 'rgba(119, 71, 237, 0.2)',
+                                borderColor: 'rgba(119, 71, 237, 1)',
+                                pointBackgroundColor: 'rgba(119, 71, 237, 1)',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: 'rgba(119, 71, 237, 1)',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Média da Turma',
+                                data: data.medias_turma,
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10,
+                                ticks: {
+                                    stepSize: 2
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Funções auxiliares
+            function calcularMedia(notas) {
+                const notasValidas = notas.filter(n => n !== null && n !== undefined);
+                if (notasValidas.length === 0) return 0;
+                return notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length;
+            }
+
+            function encontrarMelhorArea(dataAreas) {
+                let melhorIndice = 0;
+                let melhorMedia = 0;
+
+                dataAreas.medias_aluno.forEach((media, index) => {
+                    if (media > melhorMedia) {
+                        melhorMedia = media;
+                        melhorIndice = index;
+                    }
+                });
+
+                return dataAreas.areas[melhorIndice] || 'N/A';
+            }
+
+            // Event listeners
+            trimestreSelect.addEventListener('change', atualizarDashboard);
+            avaliacaoSelect.addEventListener('change', atualizarDashboard);
+
+            // Inicialização
+            await carregarInfoAluno();
+            await atualizarDashboard();
+
+            console.log('✅ Dashboard inicializado');
+        });
+    </script>
+</body>
+</html>

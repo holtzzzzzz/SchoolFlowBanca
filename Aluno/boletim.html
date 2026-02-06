@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="stylesAluno.css">
+    <title>Boletim Escolar - SchoolFlow</title>
+  </head>    
+  <body>
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <img src="../imgs/menu.png" alt="Menu">
+        <h2>Aluno</h2>
+      </div>
+      <div class="nav-links">
+        <a href="index.html"><img src="../imgs/home.png" alt="Home">Início</a>
+        <a href="boletim.html"><img src="../imgs/book.png" alt="Book">Boletim</a>
+        <a href="desempenhoAluno.html"><img src="../imgs/turma.png" alt="Class">Desempenho da Turma</a>
+      </div>  
+    </nav>
+    
+    <main class="main-content" style="display: flex; flex-direction: row; gap: 20px; max-width: 100%;">
+      <!-- Informações do aluno -->
+      <div class="info-aluno-container">
+        <h2>Nome: <span id="aluno-nome"></span></h2>
+        <h2>Turma: <span id="aluno-turma"></span></h2>
+        <h2>Matrícula: <span id="aluno-matricula"></span></h2>
+      </div>
+      
+      <!-- Seletor de trimestre -->
+      <div class="mobile">
+        <div class="filtro-trimestre">
+          <label for="trimestre-select">Selecione o Trimestre:</label>
+          <select id="trimestre-select">
+            <option value="1" selected>1º Trimestre</option>
+            <option value="2">2º Trimestre</option>
+            <option value="3">3º Trimestre</option>
+          </select>
+          <button onclick="buscarBoletim()">Buscar Boletim</button>
+        </div>
+      </div>
+      
+      <!-- Calculadora N3 -->
+      <div class="mobile" style="display: flex; flex-direction: column;">
+        <div style="width: 100%; display: flex; flex-direction: row; background-color: transparent; gap: 5px; justify-content: center; align-items: center; padding: 10px;">
+          <p style="font-size: 1.2rem; font-weight: bold;">Quanto eu preciso na N3?</p>
+          <label class="switch">
+            <input type="checkbox" id="toggle-switch">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        
+        <div id="media-container" class="hidden">
+          <p style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">Média desejada:</p>
+          <div style="display: flex; flex-direction: row; gap: 10px; justify-content: center; align-items: center;">
+            <input type="number" id="media_desejada" min="0" max="10" step="0.1" placeholder="Ex: 7.0">
+            <button id="calcular-btn">Calcular</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Tabela do boletim -->
+    <div class="main-content" style="max-width: 100%;">
+      <table>
+        <thead>
+          <tr>
+            <th>Matéria</th>
+            <th>I1</th>
+            <th>I2</th>
+            <th>EPA</th>
+            <th>N1</th>
+            <th>N2</th>
+            <th>N3</th>
+            <th>MP</th>
+            <th>REC</th>
+            <th>MT</th>
+            <th>Faltas</th>
+          </tr>
+        </thead>
+        <tbody id="boletim-tbody"></tbody>
+      </table>
+    </div>
+    
+    <script>
+      let dadosBoletim = null;
+
+      // Controle do switch
+      const toggleSwitch = document.getElementById('toggle-switch');
+      const mediaContainer = document.getElementById('media-container');
+      const calcularBtn = document.getElementById('calcular-btn');
+
+      toggleSwitch.addEventListener('change', function() {
+        if (this.checked) {
+          mediaContainer.classList.remove('hidden');
+          mediaContainer.classList.add('visible');
+        } else {
+          mediaContainer.classList.remove('visible');
+          mediaContainer.classList.add('hidden');
+          removerDestaque();
+        }
+      });
+
+      // Calcular nota necessária na N3
+      calcularBtn.addEventListener('click', function() {
+        const mediaDesejada = parseFloat(document.getElementById('media_desejada').value);
+        
+        if (!mediaDesejada || mediaDesejada < 0 || mediaDesejada > 10) {
+          alert('Por favor, insira uma média válida entre 0 e 10');
+          return;
+        }
+
+        if (!dadosBoletim) {
+          alert('Aguarde o carregamento do boletim');
+          return;
+        }
+
+        calcularN3Necessaria(mediaDesejada);
+      });
+
+      function validarMateriaParaCalculo(item) {
+        const temI1 = item.i1 !== null && item.i1 !== undefined && item.i1 !== '';
+        const temI2 = item.i2 !== null && item.i2 !== undefined && item.i2 !== '';
+        const temEPA = item.epa !== null && item.epa !== undefined && item.epa !== '';
+        const temN2 = item.n2 !== null && item.n2 !== undefined && item.n2 !== '';
+        const naoTemN3 = item.n3 === null || item.n3 === undefined || item.n3 === '';
+        
+        return temI1 && temI2 && temEPA && temN2 && naoTemN3;
+      }
+
+      function calcularN3Necessaria(mediaDesejada) {
+        const tbody = document.getElementById('boletim-tbody');
+        const rows = tbody.getElementsByTagName('tr');
+        let materiasCalculadas = 0;
+
+        dadosBoletim.notas.forEach((item, index) => {
+          const row = rows[index];
+          const n3Cell = row.cells[6];
+          
+          if (!validarMateriaParaCalculo(item)) {
+            n3Cell.innerHTML = `<span style="color: #999; font-style: italic;">-</span>`;
+            n3Cell.classList.remove('n3-necessaria');
+            n3Cell.classList.add('materia-invalida');
+            return;
+          }
+
+          materiasCalculadas++;
+          
+          const n1 = N1(item.epa, item.i1, item.i2);
+          const n2 = Number(item.n2);
+          const n3Necessaria = (mediaDesejada * 4 - n1 - n2) / 2;
+          
+          n3Cell.classList.remove('materia-invalida');
+          n3Cell.classList.add('n3-necessaria');
+          
+          if (n3Necessaria <= 0) {
+            n3Cell.innerHTML = `<span style="color: green;">Conseguiu!</span>`;
+          } else if (n3Necessaria > 10) {
+            n3Cell.innerHTML = `<span style="color: red;">Impossível! (${n3Necessaria.toFixed(2)})</span>`;
+          } else {
+            n3Cell.innerHTML = `<span style="color: #ff9800;">${n3Necessaria.toFixed(2)}</span>`;
+          }
+        });
+
+        if (materiasCalculadas === 0) {
+          alert('Nenhuma matéria disponível para cálculo.\n\nPara calcular, é necessário:\n- I1, I2 e EPA preenchidos\n- N2 preenchida\n- N3 não preenchida (ainda não realizada)');
+        }
+      }
+
+      function removerDestaque() {
+        if (!dadosBoletim) return;
+        
+        const tbody = document.getElementById('boletim-tbody');
+        const rows = tbody.getElementsByTagName('tr');
+        
+        dadosBoletim.notas.forEach((item, index) => {
+          const row = rows[index];
+          const n3Cell = row.cells[6];
+          n3Cell.classList.remove('n3-necessaria');
+          n3Cell.classList.remove('materia-invalida');
+          n3Cell.textContent = item.n3 ?? '-';
+        });
+      }
+
+      function calcularMediaParcial(n1, n2, n3) {
+        const nota1 = Number(n1) || 0;
+        const nota2 = Number(n2) || 0;
+        const nota3 = Number(n3) || 0;
+        return (nota1 + nota2 + (nota3 * 2)) / 4;
+      }
+    
+      function calcularMediaTotal(mp, rec) {
+        const mediaParcial = Number(mp) || 0;
+        const recuperacao = Number(rec) || 0;
+        if (mediaParcial >= 6) return mediaParcial;
+        let mt = Math.max(mediaParcial, recuperacao);
+        return mt > 6 ? 6 : mt;
+      }
+
+      function N1(epa, i1, i2){
+        const ins1 = Number(i1);
+        const ins2 = Number(i2);
+        const epa_ = Number(epa);
+        return (ins1 + ins2 + epa_) / 3;
+      }
+
+      async function buscarBoletim() {
+        const nomeSpan = document.getElementById('aluno-nome');
+        const turmaSpan = document.getElementById('aluno-turma');
+        const matriculaSpan = document.getElementById('aluno-matricula');
+        const tbody = document.getElementById('boletim-tbody');
+        const trimestreSelect = document.getElementById('trimestre-select');
+        const trimestre = trimestreSelect.value;
+
+        try {
+          const response = await fetch(`/api/boletim?trimestre=${trimestre}`);
+          if (!response.ok) {
+            throw new Error(`Erro ao buscar boletim: ${response.status} ${response.statusText}`)
+          };
+
+          const data = await response.json();
+          dadosBoletim = data;
+
+          nomeSpan.textContent = data.nome || '---';
+          turmaSpan.textContent = data.turma || '---';
+          matriculaSpan.textContent = data.id_aluno || '---';
+
+          tbody.innerHTML = '';
+
+          if (!data.notas || data.notas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align: center;">Nenhuma nota encontrada para este trimestre.</td></tr>';
+            return;
+          }
+
+          (data.notas || []).forEach(item => {
+            const n1 = N1(item.epa, item.i1, item.i2);
+            const mp = calcularMediaParcial(n1, item.n2, item.n3);
+            const mt = calcularMediaTotal(mp, item.rec);
+            const row = document.createElement('tr');
+            let rec_ = Number(item.rec);
+            if (mp > 6){
+              rec_ = '-';
+            }
+            row.innerHTML = `
+              <td data-label="Matéria">${item.materia}</td>
+              <td data-label="I1">${item.i1 ?? '-'}</td>
+              <td data-label="I2">${item.i2 ?? '-'}</td>
+              <td data-label="EPA">${item.epa ?? '-'}</td>
+              <td data-label="N1">${n1.toFixed(2)}</td>
+              <td data-label="N2">${item.n2 ?? '-'}</td>
+              <td data-label="N3">${item.n3 ?? '-'}</td>
+              <td data-label="MP">${mp.toFixed(2)}</td>
+              <td data-label="REC">${typeof rec_ === 'number' ? rec_.toFixed(2) : rec_}</td>
+              <td data-label="MT">${mt.toFixed(2)}</td>
+              <td data-label="Faltas">${item.faltas ?? '-'}</td>
+            `;
+            tbody.appendChild(row);
+          });
+
+        } catch (error) {
+          alert(`Erro: ${error.message}`);
+        }
+      }
+
+      window.addEventListener('load', buscarBoletim);
+    </script>
+  </body>
+</html>
