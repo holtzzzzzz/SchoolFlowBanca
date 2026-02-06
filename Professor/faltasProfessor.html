@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Faltas</title>
+    <link rel="stylesheet" href="stylesProfessor.css" />
+</head>
+<body>
+
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <img src="../imgs/menu.png" alt="Menu">
+        <h2>Professor</h2>
+      </div>
+      <div class="nav-links">
+        <a href="indexProfessor.html"><img src="../imgs/home.png" alt="Home">Início</a>
+        <a href="desempenho.html"><img src="../imgs/turma.png" alt="Class">Desempenho da Turma</a>
+        <a href="faltas.html"><img src="../imgs/faltas.png" alt="Faltas">Faltas</a>
+        <a href="boletimProfessor.html"><img src="../imgs/grades.png" alt="Grades">Notas</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+
+        <div class="page-header">
+            <h1>Registro de Faltas</h1>
+            <p id="data-info">Carregando...</p>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-faltas">
+            <div class="filtro-item">
+                <label for="turma-select">Turma:</label>
+                <select id="turma-select">
+                    <option value="">Selecione uma turma</option>
+                </select>
+            </div>
+
+            <div class="filtro-item">
+                <label for="data-select">Data da Aula:</label>
+                <input type="date" id="data-select">
+            </div>
+
+            <button id="btn-carregar" class="btn-primary">
+                📋 Carregar Alunos
+            </button>
+        </div>
+
+        <!-- Estatísticas da Turma -->
+        <div class="stats-summary" id="stats-summary" style="display: none;">
+            <!-- Será preenchido dinamicamente -->
+        </div>
+
+        <!-- Lista de Alunos -->
+        <div class="alunos-container" id="alunos-container">
+            <div class="empty-state">
+                <div class="empty-icon">📚</div>
+                <h3>Selecione uma turma e data</h3>
+                <p>Escolha a turma e a data da aula para registrar as faltas dos alunos</p>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="actions-container" id="actions-container" style="display: none;">
+            <button id="btn-salvar" class="btn-success">
+                💾 Salvar Faltas
+            </button>
+            <button id="btn-cancelar" class="btn-secondary">
+                ❌ Cancelar
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Página de Faltas carregada');
+
+            // Elementos
+            const turmaSelect = document.getElementById('turma-select');
+            const dataSelect = document.getElementById('data-select');
+            const btnCarregar = document.getElementById('btn-carregar');
+            const btnSalvar = document.getElementById('btn-salvar');
+            const btnCancelar = document.getElementById('btn-cancelar');
+            const alunosContainer = document.getElementById('alunos-container');
+            const actionsContainer = document.getElementById('actions-container');
+            const statsSummary = document.getElementById('stats-summary');
+            const dataInfo = document.getElementById('data-info');
+
+            let alunosDaTurma = [];
+            let disciplinaProfessor = null;
+
+            // Define data padrão como hoje
+            const hoje = new Date().toISOString().split('T')[0];
+            dataSelect.value = hoje;
+            atualizarDataInfo();
+
+            // Carrega turmas do professor
+            async function carregarTurmas() {
+                try {
+                    console.log('📚 Buscando turmas...');
+                    const res = await fetch('/api/professor/turmas');
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const turmas = await res.json();
+                    
+                    turmaSelect.innerHTML = '<option value="">Selecione uma turma</option>';
+                    turmas.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t.id_turma;
+                        opt.textContent = `${t.ano}º ${t.serie}`;
+                        turmaSelect.appendChild(opt);
+                    });
+                    
+                    console.log('✅ Turmas carregadas:', turmas.length);
+                } catch (error) {
+                    console.error('❌ Erro ao carregar turmas:', error);
+                    mostrarMensagem('Erro ao carregar turmas', 'error');
+                }
+            }
+
+            // Carrega alunos da turma
+            async function carregarAlunos() {
+                const id_turma = turmaSelect.value;
+                const data = dataSelect.value;
+
+                if (!id_turma) {
+                    mostrarMensagem('Selecione uma turma', 'warning');
+                    return;
+                }
+
+                if (!data) {
+                    mostrarMensagem('Selecione uma data', 'warning');
+                    return;
+                }
+
+                try {
+                    console.log('👥 Buscando alunos da turma...');
+                    const res = await fetch(`/api/professor/alunos?id_turma=${id_turma}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    
+                    const dataRes = await res.json();
+                    alunosDaTurma = dataRes.alunos || [];
+                    disciplinaProfessor = dataRes.id_disciplina;
+                    
+                    console.log('✅ Alunos carregados:', alunosDaTurma.length);
+                    
+                    // Busca faltas já registradas para esta data
+                    await carregarFaltasExistentes(id_turma, data);
+                    
+                    renderizarAlunos();
+                    atualizarEstatisticas();
+                    
+                    actionsContainer.style.display = 'flex';
+                    statsSummary.style.display = 'grid';
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao carregar alunos:', error);
+                    mostrarMensagem('Erro ao carregar alunos', 'error');
+                }
+            }
+
+            // Carrega faltas já registradas
+            async function carregarFaltasExistentes(id_turma, data) {
+                try {
+                    const res = await fetch(`/api/faltas?id_turma=${id_turma}&id_disciplina=${disciplinaProfessor}&data=${data}`);
+                    if (!res.ok) return;
+                    
+                    const faltas = await res.json();
+                    console.log('📋 Faltas existentes:', faltas);
+                    
+                    // Atualiza os alunos com as faltas já registradas
+                    alunosDaTurma.forEach(aluno => {
+                        const faltaExistente = faltas.find(f => f.id_aluno === aluno.id_aluno);
+                        aluno.faltas = faltaExistente ? faltaExistente.quantidade : 0;
+                    });
+                    
+                } catch (error) {
+                    console.log('ℹ️ Nenhuma falta registrada ainda');
+                }
+            }
+
+            // Renderiza lista de alunos
+            function renderizarAlunos() {
+                if (alunosDaTurma.length === 0) {
+                    alunosContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🤷</div>
+                            <h3>Nenhum aluno encontrado</h3>
+                            <p>Esta turma não possui alunos cadastrados</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Ordena alunos por nome
+                const alunosOrdenados = [...alunosDaTurma].sort((a, b) => 
+                    a.nome.localeCompare(b.nome)
+                );
+
+                alunosContainer.innerHTML = `
+                    <div class="alunos-header">
+                        <h2>Lista de Presença</h2>
+                        <p>${alunosOrdenados.length} aluno(s) na turma</p>
+                    </div>
+                    <div class="alunos-grid">
+                        ${alunosOrdenados.map((aluno, index) => `
+                            <div class="aluno-card" data-id="${aluno.id_aluno}">
+                                <div class="aluno-info">
+                                    <div class="aluno-numero">#${index + 1}</div>
+                                    <div class="aluno-nome">${aluno.nome}</div>
+                                </div>
+                                <div class="faltas-control">
+                                    <label>Faltas:</label>
+                                    <div class="input-group">
+                                        <button class="btn-decrement" data-id="${aluno.id_aluno}">−</button>
+                                        <input 
+                                            type="number" 
+                                            min="0" 
+                                            max="10" 
+                                            value="${aluno.faltas || 0}"
+                                            data-id="${aluno.id_aluno}"
+                                            class="input-faltas"
+                                        >
+                                        <button class="btn-increment" data-id="${aluno.id_aluno}">+</button>
+                                    </div>
+                                </div>
+                                <div class="status-indicator ${(aluno.faltas || 0) > 0 ? 'ausente' : 'presente'}">
+                                    ${(aluno.faltas || 0) > 0 ? '❌ Ausente' : '✅ Presente'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                // Adiciona event listeners
+                adicionarEventListeners();
+            }
+
+            // Adiciona event listeners aos inputs
+            function adicionarEventListeners() {
+                // Inputs de número
+                document.querySelectorAll('.input-faltas').forEach(input => {
+                    input.addEventListener('change', (e) => {
+                        const id = e.target.dataset.id;
+                        let valor = parseInt(e.target.value) || 0;
+                        
+                        // Garante que seja positivo e inteiro
+                        if (valor < 0) valor = 0;
+                        if (valor > 10) valor = 10;
+                        
+                        e.target.value = valor;
+                        atualizarFaltasAluno(id, valor);
+                    });
+
+                    // Previne valores negativos ao digitar
+                    input.addEventListener('input', (e) => {
+                        if (e.target.value < 0) e.target.value = 0;
+                    });
+                });
+
+                // Botões de incremento
+                document.querySelectorAll('.btn-increment').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.dataset.id;
+                        const input = document.querySelector(`.input-faltas[data-id="${id}"]`);
+                        let valor = parseInt(input.value) || 0;
+                        if (valor < 10) {
+                            valor++;
+                            input.value = valor;
+                            atualizarFaltasAluno(id, valor);
+                        }
+                    });
+                });
+
+                // Botões de decremento
+                document.querySelectorAll('.btn-decrement').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.dataset.id;
+                        const input = document.querySelector(`.input-faltas[data-id="${id}"]`);
+                        let valor = parseInt(input.value) || 0;
+                        if (valor > 0) {
+                            valor--;
+                            input.value = valor;
+                            atualizarFaltasAluno(id, valor);
+                        }
+                    });
+                });
+            }
+
+            // Atualiza faltas de um aluno
+            function atualizarFaltasAluno(id_aluno, quantidade) {
+                const aluno = alunosDaTurma.find(a => a.id_aluno.toString() === id_aluno);
+                if (aluno) {
+                    aluno.faltas = quantidade;
+                    atualizarStatusCard(id_aluno, quantidade);
+                    atualizarEstatisticas();
+                }
+            }
+
+            // Atualiza status visual do card
+            function atualizarStatusCard(id_aluno, faltas) {
+                const card = document.querySelector(`.aluno-card[data-id="${id_aluno}"]`);
+                if (!card) return;
+
+                const statusIndicator = card.querySelector('.status-indicator');
+                if (faltas > 0) {
+                    statusIndicator.className = 'status-indicator ausente';
+                    statusIndicator.textContent = '❌ Ausente';
+                } else {
+                    statusIndicator.className = 'status-indicator presente';
+                    statusIndicator.textContent = '✅ Presente';
+                }
+            }
+
+            // Atualiza estatísticas
+            function atualizarEstatisticas() {
+                const totalAlunos = alunosDaTurma.length;
+                const presentes = alunosDaTurma.filter(a => (a.faltas || 0) === 0).length;
+                const ausentes = totalAlunos - presentes;
+                const taxaPresenca = totalAlunos > 0 ? ((presentes / totalAlunos) * 100).toFixed(1) : 0;
+                const totalFaltas = alunosDaTurma.reduce((acc, a) => acc + (a.faltas || 0), 0);
+
+                let statusClass = 'above';
+                if (taxaPresenca < 70) statusClass = 'below';
+                else if (taxaPresenca < 85) statusClass = 'equal';
+
+                statsSummary.innerHTML = `
+                    <div class="stat-card">
+                        <h3>Total de Alunos</h3>
+                        <div class="value">${totalAlunos}</div>
+                        <div class="label">Na turma</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Presentes</h3>
+                        <div class="value">${presentes}</div>
+                        <div class="label">✅ Na aula</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Ausentes</h3>
+                        <div class="value">${ausentes}</div>
+                        <div class="label">❌ Faltaram</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Taxa de Presença</h3>
+                        <div class="value">
+                            <span class="comparison-badge ${statusClass}">${taxaPresenca}%</span>
+                        </div>
+                        <div class="label">Total de ${totalFaltas} falta(s)</div>
+                    </div>
+                `;
+            }
+
+            // Atualiza informação da data
+            function atualizarDataInfo() {
+                const data = dataSelect.value;
+                if (data) {
+                    const dataFormatada = new Date(data + 'T00:00:00').toLocaleDateString('pt-BR', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    dataInfo.textContent = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+                } else {
+                    dataInfo.textContent = 'Selecione uma data';
+                }
+            }
+
+            // Salva faltas
+            async function salvarFaltas() {
+                const id_turma = turmaSelect.value;
+                const data = dataSelect.value;
+
+                if (!id_turma || !data) {
+                    mostrarMensagem('Selecione turma e data', 'warning');
+                    return;
+                }
+
+                // Prepara dados para envio
+                const faltas = alunosDaTurma.map(aluno => ({
+                    id_aluno: aluno.id_aluno,
+                    id_disciplina: disciplinaProfessor,
+                    id_turma: parseInt(id_turma),
+                    data: data,
+                    quantidade: aluno.faltas || 0
+                }));
+
+                console.log('💾 Salvando faltas:', faltas);
+
+                try {
+                    const res = await fetch('/api/faltas', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ faltas })
+                    });
+
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                    const resultado = await res.json();
+                    console.log('✅ Faltas salvas:', resultado);
+                    
+                    mostrarMensagem('Faltas registradas com sucesso!', 'success');
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao salvar faltas:', error);
+                    mostrarMensagem('Erro ao salvar faltas', 'error');
+                }
+            }
+
+            // Mostra mensagem de feedback
+            function mostrarMensagem(texto, tipo = 'info') {
+                // Remove mensagem anterior se existir
+                const msgExistente = document.querySelector('.mensagem-feedback');
+                if (msgExistente) msgExistente.remove();
+
+                const mensagem = document.createElement('div');
+                mensagem.className = `mensagem-feedback ${tipo}`;
+                mensagem.innerHTML = `
+                    <span>${texto}</span>
+                    <button onclick="this.parentElement.remove()">✕</button>
+                `;
+                
+                document.querySelector('.main-content').insertBefore(
+                    mensagem, 
+                    document.querySelector('.page-header').nextSibling
+                );
+
+                // Remove automaticamente após 5 segundos
+                setTimeout(() => {
+                    if (mensagem.parentElement) {
+                        mensagem.remove();
+                    }
+                }, 5000);
+            }
+
+            // Event Listeners
+            btnCarregar.addEventListener('click', carregarAlunos);
+            btnSalvar.addEventListener('click', salvarFaltas);
+            btnCancelar.addEventListener('click', () => {
+                if (confirm('Deseja cancelar? As alterações não salvas serão perdidas.')) {
+                    location.reload();
+                }
+            });
+
+            dataSelect.addEventListener('change', atualizarDataInfo);
+
+            // Atalhos de teclado
+            document.addEventListener('keydown', (e) => {
+                // Ctrl/Cmd + S para salvar
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    if (alunosDaTurma.length > 0) {
+                        salvarFaltas();
+                    }
+                }
+            });
+
+            // Inicialização
+            carregarTurmas();
+            console.log('✅ Sistema de faltas inicializado');
+        });
+    </script>
+</body>
+</html>

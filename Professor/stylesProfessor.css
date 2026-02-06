@@ -77,6 +77,449 @@ nav.sidebar {
   transform: translateX(1%) scale(1.05);
 }
 
+/* ==================== ESTILOS DA PÁGINA DE FALTAS ==================== */
+/* Adicione estes estilos ao seu arquivo stylesProfessor.css */
+
+/* Filtros de Faltas */
+.filtros-faltas {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-end;
+}
+
+.filtros-faltas .filtro-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+    flex: 1;
+}
+
+.filtros-faltas .filtro-item label {
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.filtros-faltas select,
+.filtros-faltas input[type="date"] {
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filtros-faltas select:focus,
+.filtros-faltas input[type="date"]:focus {
+    outline: none;
+    border-color: #7747ed;
+    box-shadow: 0 0 0 3px rgba(119, 71, 237, 0.1);
+}
+
+.filtros-faltas select:hover,
+.filtros-faltas input[type="date"]:hover {
+    border-color: #7747ed;
+}
+
+/* Botões */
+.btn-primary,
+.btn-success,
+.btn-secondary {
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #7747ed;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #6035d4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(119, 71, 237, 0.3);
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* Container de Alunos */
+.alunos-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    min-height: 400px;
+}
+
+.alunos-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.alunos-header h2 {
+    margin: 0 0 0.5rem 0;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.alunos-header p {
+    margin: 0;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+/* Grid de Alunos */
+.alunos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Card de Aluno */
+.aluno-card {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.aluno-card:hover {
+    border-color: #7747ed;
+    box-shadow: 0 4px 12px rgba(119, 71, 237, 0.15);
+    transform: translateY(-2px);
+}
+
+.aluno-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.aluno-numero {
+    background: #7747ed;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.aluno-nome {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+/* Controle de Faltas */
+.faltas-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.faltas-control label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 600;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    border-radius: 8px;
+    padding: 0.5rem;
+    border: 2px solid #e0e0e0;
+}
+
+.input-faltas {
+    flex: 1;
+    border: none;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+    padding: 0.5rem;
+    background: transparent;
+    width: 60px;
+}
+
+.input-faltas:focus {
+    outline: none;
+}
+
+/* Remove setas do input number */
+.input-faltas::-webkit-inner-spin-button,
+.input-faltas::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+.btn-increment,
+.btn-decrement {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: none;
+    background: #7747ed;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.btn-increment:hover,
+.btn-decrement:hover {
+    background: #6035d4;
+    transform: scale(1.1);
+}
+
+.btn-increment:active,
+.btn-decrement:active {
+    transform: scale(0.95);
+}
+
+/* Indicador de Status */
+.status-indicator {
+    padding: 0.75rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.status-indicator.presente {
+    background: #d4edda;
+    color: #155724;
+    border: 2px solid #c3e6cb;
+}
+
+.status-indicator.ausente {
+    background: #f8d7da;
+    color: #721c24;
+    border: 2px solid #f5c6cb;
+}
+
+/* Estado Vazio */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #999;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    color: #999;
+}
+
+/* Container de Ações */
+.actions-container {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+}
+
+/* Mensagem de Feedback */
+.mensagem-feedback {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    animation: slideDown 0.3s ease-out;
+}
+
+.mensagem-feedback.success {
+    background: #d4edda;
+    color: #155724;
+    border: 2px solid #c3e6cb;
+}
+
+.mensagem-feedback.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 2px solid #f5c6cb;
+}
+
+.mensagem-feedback.warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 2px solid #ffeeba;
+}
+
+.mensagem-feedback.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 2px solid #bee5eb;
+}
+
+.mensagem-feedback button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    padding: 0 0.5rem;
+}
+
+.mensagem-feedback button:hover {
+    opacity: 1;
+}
+
+/* Animações */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.aluno-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+    .alunos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .filtros-faltas {
+        flex-direction: column;
+    }
+
+    .filtros-faltas .filtro-item {
+        width: 100%;
+    }
+
+    .alunos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .actions-container {
+        flex-direction: column;
+        position: static;
+    }
+
+    .btn-primary,
+    .btn-success,
+    .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Tema de impressão */
+@media print {
+    .sidebar,
+    .filtros-faltas,
+    .actions-container {
+        display: none !important;
+    }
+
+    .aluno-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .status-indicator.ausente {
+        background: #000 !important;
+        color: #fff !important;
+    }
+}
+
+
 /* ===== MAIN CONTENT ===== */
 .main-content {
   margin-left: 220px;
