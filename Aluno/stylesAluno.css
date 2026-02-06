@@ -444,6 +444,7 @@ nav.sidebar {
   bottom: 0;
   background-color: #ccc;
   transition: .4s;
+  width: 35px;
 }
 
 .slider:before {
@@ -465,9 +466,7 @@ input:focus + .slider {
   box-shadow: 0 0 1px #2196F3;
 }
 
-input:checked + .slider:before {
-  transform: translateX(26px);
-}
+
 
 .slider.round {
   border-radius: 34px;
